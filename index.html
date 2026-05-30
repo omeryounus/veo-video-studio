@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Veo Video Studio – Extended</title>
+  <meta name="description" content="Enterprise-style Veo studio with text-to-video, image-to-video, and Veo 3.1 scene extension via Gemini API." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+  <style>
+    :root,
+    [data-theme="light"] {
+      --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
+      --text-sm:   clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
+      --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+      --text-lg:   clamp(1.125rem, 1rem    + 0.75vw, 1.5rem);
+      --text-xl:   clamp(1.5rem,   1.2rem  + 1.25vw, 2.25rem);
+      --space-1:  0.25rem;
+      --space-2:  0.5rem;
+      --space-3:  0.75rem;
+      --space-4:  1rem;
+      --space-5:  1.25rem;
+      --space-6:  1.5rem;
+      --space-8:  2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+      --color-bg:             #020617;
+      --color-surface:        #020617;
+      --color-surface-2:      #020617;
+      --color-border-subtle:  rgba(148, 163, 184, 0.35);
+      --color-text:           #e5e7eb;
+      --color-text-muted:     #9ca3af;
+      --color-text-faint:     #6b7280;
+      --color-primary:        #4f46e5;
+      --color-primary-hover:  #4338ca;
+      --color-primary-active: #3730a3;
+      --color-error:          #f97373;
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-full: 9999px;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.6);
+      --shadow-md: 0 4px 18px rgba(15, 23, 42, 0.9);
+      --content-default: 1040px;
+      --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      scroll-behavior: smooth;
+      scroll-padding-top: var(--space-16, 4rem);
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-text);
+      background: radial-gradient(circle at top, #020617 0, #020617 40%, #020617 100%);
+      padding-bottom: var(--space-12);
+    }
+
+    img, video { max-width: 100%; display: block; }
+    button { font: inherit; color: inherit; border: none; background: none; cursor: pointer; }
+
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; white-space: nowrap;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 3px;
+      border-radius: var(--radius-sm);
+    }
+
+    .shell { max-width: var(--content-default); margin: 0 auto; padding: var(--space-6) var(--space-4); }
+
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--space-4); margin-bottom: var(--space-8);
+    }
+
+    .brand { display: flex; align-items: center; gap: var(--space-3); }
+
+    .logo {
+      width: 32px; height: 32px; border-radius: 12px;
+      background: radial-gradient(circle at 30% 10%, #ffffff 0, #eef2ff 16%, #4f46e5 40%, #020617 100%);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), var(--shadow-md);
+      display: flex; align-items: center; justify-content: center;
+      color: #020617; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.08em;
+    }
+
+    .brand-text h1 { font-family: var(--font-display); font-size: var(--text-xl); letter-spacing: 0.03em; }
+    .brand-text p { font-size: var(--text-sm); color: var(--color-text-muted); max-width: 46ch; }
+
+    .header-meta { display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-end; }
+    .env-pill-row { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end; }
+
+    .pill {
+      font-size: var(--text-xs);
+      padding: 0.15rem 0.7rem;
+      border-radius: var(--radius-full);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--color-text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    .api-key-group {
+      display: flex; align-items: center; gap: var(--space-2);
+      flex-wrap: wrap; justify-content: flex-end;
+    }
+
+    .api-key-input {
+      min-width: 260px;
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border-subtle);
+      background: rgba(15, 23, 42, 0.98);
+      color: var(--color-text);
+      font-size: var(--text-sm);
+    }
+
+    main { display: grid; gap: var(--space-6); }
+
+    @media (min-width: 980px) {
+      main { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr); align-items: flex-start; }
+    }
+
+    .panel {
+      background: rgba(15, 23, 42, 0.96);
+      border-radius: 1rem;
+      border: 1px solid var(--color-border-subtle);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-5);
+      position: relative;
+    }
+
+    .panel h2 { font-family: var(--font-display); font-size: var(--text-lg); margin-bottom: var(--space-2); }
+    .panel p.description { font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-4); }
+
+    .mode-toggle {
+      display: inline-flex; padding: 0.2rem;
+      border-radius: var(--radius-full);
+      background: rgba(15, 23, 42, 0.98);
+      border: 1px solid var(--color-border-subtle);
+      margin-bottom: var(--space-4);
+    }
+
+    .mode-toggle button {
+      padding: 0.35rem 0.9rem;
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      background: transparent;
+      transition: background var(--transition-interactive), color var(--transition-interactive);
+    }
+
+    .mode-toggle button[data-active="true"] {
+      background: var(--color-primary);
+      color: #f9fafb;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), var(--shadow-md);
+    }
+
+    .fields { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
+    .field { display: grid; gap: 0.2rem; font-size: var(--text-sm); }
+    .field-row { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+
+    label span {
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--color-text-muted);
+    }
+
+    textarea,
+    select,
+    input[type="number"],
+    input[type="file"],
+    input[type="password"] {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-subtle);
+      background: rgba(15, 23, 42, 0.98);
+      color: var(--color-text);
+      padding: 0.55rem 0.75rem;
+      font-size: var(--text-sm);
+      resize: vertical;
+      min-height: 46px;
+    }
+
+    textarea::placeholder { color: var(--color-text-faint); }
+
+    .hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+    .actions {
+      display: flex; flex-wrap: wrap; gap: var(--space-3);
+      align-items: center; justify-content: space-between;
+    }
+
+    .btn-primary {
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      color: #f9fafb;
+      padding: 0.55rem 1.5rem;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      box-shadow: var(--shadow-md);
+      display: inline-flex; align-items: center; gap: 0.45rem;
+    }
+
+    .btn-primary[disabled] { opacity: 0.7; cursor: wait; }
+
+    .status { font-size: var(--text-xs); color: var(--color-text-muted); display: flex; align-items: center; gap: 0.35rem; }
+
+    .dot {
+      width: 7px; height: 7px; border-radius: 999px;
+      background: var(--color-primary);
+      box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(79, 70, 229, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+    }
+
+    .output-panel { display: grid; gap: var(--space-3); }
+
+    .output-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--space-2); margin-bottom: var(--space-1);
+    }
+
+    .output-header h2 { font-family: var(--font-display); font-size: var(--text-lg); }
+    .output-header p { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+    .badge-row { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end; }
+
+    .badge {
+      font-size: var(--text-xs);
+      padding: 0.1rem 0.6rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border-subtle);
+      color: var(--color-text-muted);
+      background: rgba(15, 23, 42, 0.98);
+    }
+
+    .video-frame {
+      border-radius: 1rem;
+      border: 1px solid var(--color-border-subtle);
+      overflow: hidden;
+      background: radial-gradient(circle at center, #020617 0, #020617 55%, #020617 100%);
+      position: relative;
+      min-height: 220px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .video-frame video { width: 100%; height: auto; max-height: 420px; display: none; }
+    .video-placeholder { text-align: center; padding: var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); }
+
+    .log {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      background: rgba(15, 23, 42, 0.98);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-subtle);
+      padding: var(--space-3);
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .section-divider { margin: var(--space-3) 0; border-top: 1px solid var(--color-border-subtle); }
+
+    .extend-controls {
+      display: flex; flex-wrap: wrap; gap: var(--space-3);
+      align-items: center; margin-top: var(--space-3);
+    }
+
+    .extend-group { display: grid; gap: 0.25rem; font-size: var(--text-sm); }
+
+    .error-text { color: var(--color-error); }
+
+    @media (max-width: 600px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .header-meta { align-items: flex-start; }
+      .api-key-group { width: 100%; justify-content: flex-start; }
+      .api-key-input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">V</div>
+        <div class="brand-text">
+          <h1>Veo Video Studio</h1>
+          <p>Text-to-video, image-to-video, and Veo 3.1 scene extension in a single studio-style UI.</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="env-pill-row">
+          <span class="pill">Prototype client – move Veo calls behind a backend for production</span>
+        </div>
+        <div class="api-key-group">
+          <label class="sr-only" for="apiKey">Gemini API key</label>
+          <input id="apiKey" class="api-key-input" type="password" placeholder="GEMINI_API_KEY" autocomplete="off" />
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel" aria-labelledby="composer-title">
+        <h2 id="composer-title">Compose a shot</h2>
+        <p class="description">
+          Start with a base clip using text or an image+text pair. Then extend that clip on the right using Veo 3.1's
+          scene extension.
+        </p>
+
+        <div class="mode-toggle" role="tablist" aria-label="Generation mode">
+          <button id="modeText" role="tab" data-mode="text" data-active="true">Text → Video</button>
+          <button id="modeImage" role="tab" data-mode="image">Image + Text → Video</button>
+        </div>
+
+        <div class="fields">
+          <div class="field">
+            <label for="prompt"><span>Prompt</span></label>
+            <textarea
+              id="prompt"
+              rows="4"
+              placeholder="A cinematic tracking shot through a neon-lit alley at night, rain on the lens, shallow depth of field..."
+            ></textarea>
+            <p class="hint">
+              Good base prompts describe camera motion, subject motion, and lighting. Keep them simple and specific.
+            </p>
+          </div>
+
+          <div class="field">
+            <label for="negative"><span>Negative prompt (optional)</span></label>
+            <textarea
+              id="negative"
+              rows="2"
+              placeholder="no text overlays, no title cards, avoid slow zooms..."
+            ></textarea>
+          </div>
+
+          <div class="field field-row">
+            <div class="field">
+              <label for="model"><span>Base model</span></label>
+              <select id="model">
+                <option value="veo-3.1-generate-preview">Veo 3.1 preview</option>
+                <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast preview</option>
+                <option value="veo-3.0-generate-preview">Veo 3.0 preview</option>
+              </select>
+              <p class="hint">3.1 is required for scene extension and reference-image workflows.</p>
+            </div>
+            <div class="field">
+              <label for="duration"><span>Duration (seconds)</span></label>
+              <input id="duration" type="number" min="4" max="8" step="2" value="8" />
+              <p class="hint">Veo clips are generated in 4–8 second chunks before extension.</p>
+            </div>
+            <div class="field">
+              <label for="aspect"><span>Aspect ratio</span></label>
+              <select id="aspect">
+                <option value="16:9">16:9 (landscape)</option>
+                <option value="9:16">9:16 (vertical)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field" id="imageField" style="display:none;">
+            <label for="imageInput"><span>Starting image</span></label>
+            <input id="imageInput" type="file" accept="image/*" />
+            <p class="hint">For image-to-video, Veo uses the uploaded still as the first frame.</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="generate" class="btn-primary"><span>Generate base clip</span></button>
+          <div class="status" id="status">
+            <span class="dot" aria-hidden="true"></span>
+            <span id="statusText">Idle. Configure your base shot and select Generate.</span>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="extend-controls">
+          <div class="extend-group">
+            <label for="extendPrompt"><span>Extend prompt</span></label>
+            <textarea
+              id="extendPrompt"
+              rows="2"
+              placeholder="Continue the shot as the camera rises above the city, revealing the skyline at dawn..."
+            ></textarea>
+            <p class="hint">
+              Extension prompts describe what happens next, based on the final second of the existing clip.
+            </p>
+          </div>
+          <div class="extend-group" style="min-width: 220px;">
+            <label><span>Scene extension</span></label>
+            <button id="extend" class="btn-primary" style="width: 100%;"><span>Extend last Veo clip</span></button>
+            <p class="hint">
+              Uses Veo 3.1's <em>video extension</em> feature to add ~7 seconds on top of an existing Veo video.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel output-panel" aria-labelledby="output-title">
+        <div class="output-header">
+          <div>
+            <h2 id="output-title">Output & timeline</h2>
+            <p>Preview the current composite and download clips created in this session.</p>
+          </div>
+          <div class="badge-row">
+            <span class="badge">Async operations</span>
+            <span class="badge">Scene extension (Veo 3.1)</span>
+            <span class="badge">File API downloads</span>
+          </div>
+        </div>
+
+        <div class="video-frame">
+          <video id="video" controls playsinline></video>
+          <div id="placeholder" class="video-placeholder">
+            <p>No video yet. Generate a base clip, then extend it to build a longer scene.</p>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top: var(--space-3);">
+          <button id="download" class="pill" disabled>Download current clip</button>
+          <span class="hint">Downloads use the same File API patterns as the Veo cookbook.</span>
+        </div>
+
+        <div class="field">
+          <label><span>Event log</span></label>
+          <div id="log" class="log" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    'use strict';
+    import { GoogleGenerativeAI, GoogleAIFileManager } from 'https://esm.run/@google/generative-ai@0.7.0';
+
+    const APP_CONFIG = {
+      defaultModel: 'veo-3.1-generate-preview',
+      minDurationSeconds: 4,
+      maxDurationSeconds: 8,
+      logMaxChars: 40000,
+      extensionResolution: '720p', // required for extension per docs
+    };
+
+    function byId(id) {
+      const el = document.getElementById(id);
+      if (!el) throw new Error(`Missing DOM element with id="${id}"`);
+      return el;
+    }
+
+    const apiKeyInput = byId('apiKey');
+    const modeTextBtn = byId('modeText');
+    const modeImageBtn = byId('modeImage');
+    const promptEl = byId('prompt');
+    const negativeEl = byId('negative');
+    const modelEl = byId('model');
+    const durationEl = byId('duration');
+    const aspectEl = byId('aspect');
+    const imageField = byId('imageField');
+    const imageInput = byId('imageInput');
+    const generateBtn = byId('generate');
+    const extendBtn = byId('extend');
+    const extendPromptEl = byId('extendPrompt');
+    const statusText = byId('statusText');
+    const videoEl = byId('video');
+    const placeholder = byId('placeholder');
+    const downloadBtn = byId('download');
+    const logEl = byId('log');
+
+    const LogLevel = Object.freeze({ INFO: 'info', ERROR: 'error' });
+
+    function log(message, level = LogLevel.INFO) {
+      const time = new Date().toLocaleTimeString();
+      const prefix = level === LogLevel.ERROR ? '[error]' : '[info]';
+      const line = `[${time}] ${prefix} ${message}\n`;
+      logEl.textContent = line + logEl.textContent;
+      if (logEl.textContent.length > APP_CONFIG.logMaxChars) {
+        logEl.textContent = logEl.textContent.slice(0, APP_CONFIG.logMaxChars);
+      }
+      if (level === LogLevel.ERROR) statusText.textContent = message;
+    }
+
+    function setBaseLoading(isLoading) {
+      if (isLoading) {
+        generateBtn.setAttribute('disabled', 'true');
+        generateBtn.textContent = 'Generating base clip...';
+        statusText.textContent = 'Generating base clip – this may take a moment.';
+      } else {
+        generateBtn.removeAttribute('disabled');
+        generateBtn.textContent = 'Generate base clip';
+      }
+    }
+
+    function setExtendLoading(isLoading) {
+      if (isLoading) {
+        extendBtn.setAttribute('disabled', 'true');
+        extendBtn.textContent = 'Extending...';
+        statusText.textContent = 'Extending clip – Veo is stitching onto the final second.';
+      } else {
+        extendBtn.removeAttribute('disabled');
+        extendBtn.textContent = 'Extend last Veo clip';
+      }
+    }
+
+    let currentMode = 'text';
+    let client = null;
+    let fileManager = null;
+    let lastVideoAsset = null; // Veo-generated video object used for extension
+
+    function ensureClient() {
+      const key = apiKeyInput.value.trim();
+      if (!key) throw new Error('Add your Gemini API key first.');
+      if (!client) {
+        client = new GoogleGenerativeAI(key);
+        fileManager = new GoogleAIFileManager(key);
+        log('Initialized GoogleGenerativeAI client and FileManager.');
+      }
+      return client;
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      const isText = mode === 'text';
+      modeTextBtn.dataset.active = String(isText);
+      modeImageBtn.dataset.active = String(!isText);
+      imageField.style.display = isText ? 'none' : 'block';
+      log(`Switched to ${isText ? 'text-to-video' : 'image+text-to-video'} mode.`);
+    }
+
+    modeTextBtn.addEventListener('click', () => switchMode('text'));
+    modeImageBtn.addEventListener('click', () => switchMode('image'));
+
+    async function uploadImageIfNeeded() {
+      if (currentMode !== 'image') return null;
+      const file = imageInput.files?.[0];
+      if (!file) throw new Error('Select a starting image for image-to-video.');
+      log(`Uploading image (${file.name}, ${Math.round(file.size / 1024)} KB) via File API...`);
+      const uploadResponse = await fileManager.uploadFile(file, { mimeType: file.type, displayName: file.name });
+      log(`Uploaded image. fileUri: ${uploadResponse.file.uri}`);
+      return uploadResponse.file;
+    }
+
+    function validateBaseInputs() {
+      const prompt = promptEl.value.trim();
+      if (!prompt) throw new Error('Prompt is required.');
+      const rawDuration = Number(durationEl.value);
+      const duration = Number.isFinite(rawDuration) ? rawDuration : APP_CONFIG.maxDurationSeconds;
+      if (duration < APP_CONFIG.minDurationSeconds || duration > APP_CONFIG.maxDurationSeconds) {
+        throw new Error(`Duration must be between ${APP_CONFIG.minDurationSeconds} and ${APP_CONFIG.maxDurationSeconds} seconds.`);
+      }
+      return {
+        prompt,
+        negative: negativeEl.value.trim(),
+        modelName: modelEl.value || APP_CONFIG.defaultModel,
+        duration,
+        aspectRatio: aspectEl.value,
+      };
+    }
+
+    function validateExtensionInputs() {
+      if (!lastVideoAsset) {
+        throw new Error('Generate a base Veo clip first before extending.');
+      }
+      const modelName = modelEl.value || APP_CONFIG.defaultModel;
+      if (!modelName.startsWith('veo-3.1')) {
+        throw new Error('Use a Veo 3.1 model for scene extension.');
+      }
+      const prompt = extendPromptEl.value.trim();
+      if (!prompt) throw new Error('Add an extension prompt describing what happens next.');
+      return { prompt, modelName };
+    }
+
+    async function generateBaseClip() {
+      try {
+        setBaseLoading(true);
+        ensureClient();
+        const { prompt, negative, modelName, duration, aspectRatio } = validateBaseInputs();
+        log(`Starting ${currentMode === 'text' ? 'text' : 'image+text'} base generation using ${modelName}...`);
+
+        const model = client.getGenerativeModel({ model: modelName });
+        const contents = [];
+        if (currentMode === 'image') {
+          const imgFile = await uploadImageIfNeeded();
+          contents.push({ fileData: { fileUri: imgFile.uri, mimeType: imgFile.mimeType } });
+        }
+        contents.push({ text: prompt });
+
+        const config = { aspectRatio, durationSeconds: duration };
+        if (negative) config.negativePrompt = negative;
+
+        const response = await model.generateVideo({ contents, config });
+        log('Base generation request sent. Awaiting operation result...');
+        const operation = await response.operation();
+        log('Base operation completed. Fetching video asset...');
+
+        if (!operation.result || !operation.result.output || !operation.result.output[0]) {
+          throw new Error('No video file in base operation result.');
+        }
+
+        const output = operation.result.output[0];
+        if (!output.video) {
+          throw new Error('Expected Veo video asset on output.video for extension support.');
+        }
+
+        lastVideoAsset = output.video; // keep full asset for extension
+        log(`Base video asset ready. id: ${lastVideoAsset.name || '(no name)'}`);
+
+        const file = await fileManager.getFile(lastVideoAsset.uri || lastVideoAsset.fileUri || '');
+        if (!file || !file.uri) {
+          throw new Error('File API did not return a playable URI for base clip.');
+        }
+
+        videoEl.src = file.uri;
+        videoEl.style.display = 'block';
+        placeholder.style.display = 'none';
+        statusText.textContent = 'Base clip ready. You can now extend the scene on the right.';
+        downloadBtn.disabled = false;
+      } catch (err) {
+        console.error(err);
+        const message = err instanceof Error ? err.message : String(err);
+        log(message, LogLevel.ERROR);
+        alert(message);
+      } finally {
+        setBaseLoading(false);
+      }
+    }
+
+    async function extendClip() {
+      try {
+        setExtendLoading(true);
+        ensureClient();
+        const { prompt, modelName } = validateExtensionInputs();
+        log(`Starting scene extension using ${modelName} (7-second append).`);
+
+        const model = client.getGenerativeModel({ model: modelName });
+        const config = {
+          resolution: APP_CONFIG.extensionResolution,
+          numberOfVideos: 1,
+        };
+
+        // Veo 3.1 extension takes a previous Veo-generated video as input plus a new prompt.
+        const response = await model.generateVideo({
+          video: lastVideoAsset,
+          prompt,
+          config,
+        });
+
+        log('Extension request sent. Awaiting operation result...');
+        const operation = await response.operation();
+        log('Extension operation completed. Fetching extended video asset...');
+
+        if (!operation.result || !operation.result.output || !operation.result.output[0]) {
+          throw new Error('No video file in extension operation result.');
+        }
+
+        const extended = operation.result.output[0];
+        if (!extended.video) {
+          throw new Error('Expected extended video asset on output.video.');
+        }
+
+        lastVideoAsset = extended.video; // update for further extensions
+        log(`Extended video asset ready. id: ${lastVideoAsset.name || '(no name)'}`);
+
+        const file = await fileManager.getFile(lastVideoAsset.uri || lastVideoAsset.fileUri || '');
+        if (!file || !file.uri) {
+          throw new Error('File API did not return a playable URI for extended clip.');
+        }
+
+        videoEl.src = file.uri;
+        videoEl.style.display = 'block';
+        placeholder.style.display = 'none';
+        statusText.textContent = 'Extended clip ready. You can extend again with a new prompt.';
+        downloadBtn.disabled = false;
+      } catch (err) {
+        console.error(err);
+        const message = err instanceof Error ? err.message : String(err);
+        log(message, LogLevel.ERROR);
+        alert(message);
+      } finally {
+        setExtendLoading(false);
+      }
+    }
+
+    async function downloadCurrentClip() {
+      try {
+        ensureClient();
+        if (!lastVideoAsset) throw new Error('No clip to download yet.');
+        log('Preparing browser download for current clip...');
+
+        const file = await fileManager.getFile(lastVideoAsset.uri || lastVideoAsset.fileUri || '');
+        if (!file || !file.uri) throw new Error('File API did not return a downloadable URI.');
+
+        const a = document.createElement('a');
+        a.href = file.uri;
+        a.download = 'veo_clip.mp4';
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        log('Triggered browser download / open for the clip.');
+      } catch (err) {
+        console.error(err);
+        const message = err instanceof Error ? err.message : String(err);
+        log(message, LogLevel.ERROR);
+        alert(message);
+      }
+    }
+
+    generateBtn.addEventListener('click', () => { void generateBaseClip(); });
+    extendBtn.addEventListener('click', () => { void extendClip(); });
+    downloadBtn.addEventListener('click', () => { void downloadCurrentClip(); });
+
+    log('Ready. Generate a base Veo 3.1 clip, then iterate with scene extension prompts.');
+  </script>
+</body>
+</html>
